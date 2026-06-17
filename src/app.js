@@ -5,9 +5,13 @@ const User = require("./models/user");
 const user = require("./models/user");
 const { validateSignupData } = require("./utils/validate")
 const bcrypt = require("bcrypt")
+const cookieParser = require("cookie-parser")
+const jwt = require("jsonwebtoken")
+require("dotenv").config()
 
 
 app.use(express.json())
+app.use(cookieParser())
 
 app.post("/signup", async (req, res) => {
     try { 
@@ -34,6 +38,9 @@ app.post("/login", async (req, res) => {
         }
         const isPasswordValid = await bcrypt.compare(password, user.password)
         if (isPasswordValid) {
+            const token = await jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+            console.log(token)
+            res.cookie("token", token)
             res.send("login succesfull")
         }
         else {
@@ -57,12 +64,21 @@ app.get("/user", async (req, res) => {
             console.log(`${users.length} users found`)
             res.send(users)
         }
-        // console.log(user)
-        // res.send(user) 
     }
     catch (err) {
         res.send("something went wrong")
     }
+})
+
+app.get("/profile", async (req, res) => {
+    const cookies = req.cookies
+    const {token} = cookies
+    const decodedMessage = await jwt.verify(token, process.env.JWT_SECRET)
+    const { id } = decodedMessage
+    const user = await User.findOne({ _id: id })
+    console.log(user)
+    console.log("The logged in user is: " + id)
+    res.send("reading cookies")
 })
 
 app.get("/feed", async (req, res) => {
