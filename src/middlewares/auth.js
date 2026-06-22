@@ -11,10 +11,10 @@ const userAuth = async (req, res, next) => {
         }
         
         const decodedData = await jwt.verify(token, process.env.JWT_SECRET)
-        const { id } = decodedData
-        const user = await User.findById({ _id : id })
+        const { _id } = decodedData
+        const user = await User.findById({ _id })
         
-        if (!user) {
+        if (!user) {    
             throw new Error("user not found")
         }
         req.user = user

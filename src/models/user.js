@@ -1,5 +1,8 @@
 const mongoose = require("mongoose")
 const validator = require("validator")
+const jwt = require("jsonwebtoken")
+require("dotenv").config()
+const bcrypt = require("bcrypt")
 
 
 const userSchema = new mongoose.Schema({
@@ -33,7 +36,7 @@ const userSchema = new mongoose.Schema({
         minLength: 6,
         validate(value) {
             if (!validator.isStrongPassword(value)) {
-                throw new Error("Weak password: " + value)
+                throw new Error("Please enter a strong password")
             }
         }
     },
@@ -54,6 +57,7 @@ const userSchema = new mongoose.Schema({
     }, 
     skills: {
         type: [String],
+        default : []
     },
     about: {
         type: String,
@@ -66,11 +70,27 @@ const userSchema = new mongoose.Schema({
         default: "https://t3.ftcdn.net/jpg/07/24/59/76/360_F_724597608_pmo5BsVumFcFyHJKlASG2Y2KpkkfiYUU.jpg",
         validate(value) {
             if (!validator.isURL(value)) {
-                throw new Error("Invalid valid url: " + value)
+                throw new Error("Invalid  URL: " + value)
             }
         }
     },
 },
- { timestamps: true},)
+    { timestamps: true },)
+ 
+
+userSchema.methods.getJWT = async function () {
+    const user = this
+    const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" })
+    
+    return token
+}
+
+userSchema.methods.validatePassword = async function (passwordInputByUser){
+    const user = this
+    const isPasswordValid = await bcrypt.compare(passwordInputByUser, user.password)
+
+    return isPasswordValid
+}
+
 
 module.exports = mongoose.model("User", userSchema)
