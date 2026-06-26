@@ -7,8 +7,8 @@ const { validateEditProfileData } = require("../utils/validate")
 const profileRouter = express.Router()
 
 profileRouter.get("/profile", userAuth, async (req, res) => {
-    const { user } = req.user
-    res.send("reading cookies")
+    const user  = req.user
+    res.send(user)
 })
 
 profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
@@ -17,9 +17,7 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
             throw new Error("Please enter valid data")
         }
         const loggedInUser = req.user
-        console.log(loggedInUser)
         Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]))
-        console.log(loggedInUser)
         await loggedInUser.save()
         res.send("User updated")
     }
