@@ -1,6 +1,8 @@
 const express = require("express")
 const { userAuth } = require("../middlewares/auth")
 const user = require("../models/user");
+const User = require("../models/user");
+const { validateEditProfileData } = require("../utils/validate")
 
 const profileRouter = express.Router()
 
@@ -9,29 +11,17 @@ profileRouter.get("/profile", userAuth, async (req, res) => {
     res.send("reading cookies")
 })
 
-profileRouter.patch("/user/:userId", async (req, res) => {
-    try {
-        const userId = req.params?.userId
-        const data = req.body
-        const ALLOWED_UPDATES = ["id", "password", "age", "skills", "photoUrl", "about"]
-        const isUpdateAllowed = Object.keys(data).every((k) => 
-         ALLOWED_UPDATES.includes(k)
-        )
-
-        if (data.skills.length > 10) {
-            throw new Error("Skills should not exceed 10")
+profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
+    try { 
+        if (!validateEditProfileData(req)) {
+            throw new Error("Please enter valid data")
         }
-
-        if (!isUpdateAllowed) {
-            throw new Error("update not allowed")
-        }
- 
-        await User.findByIdAndUpdate({ _id : userId }, data, {
-            returnDocument: "after",
-            runValidators : true,
-        },)
+        const loggedInUser = req.user
+        console.log(loggedInUser)
+        Object.keys(req.body).forEach((key) => (loggedInUser[key] = req.body[key]))
+        console.log(loggedInUser)
+        await loggedInUser.save()
         res.send("User updated")
-        
     }
     catch (err) {
         res.send("error: " + err.message)
@@ -48,5 +38,7 @@ profileRouter.delete("/user", async (req, res) => {
         res.send("User not deleted")
     }
 })
+
+
 
 module.exports = { profileRouter }
